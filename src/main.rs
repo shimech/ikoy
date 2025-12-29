@@ -1,9 +1,9 @@
 mod args;
 mod console;
+mod helper;
 
 use crate::args::Args;
 use clap::Parser;
-use v8::PinScope;
 
 fn main() {
     let args = Args::parse();
@@ -21,11 +21,9 @@ fn main() {
 
     let js_global = context.global(scope);
 
-    let js_console = v8::Object::new(scope);
-    let js_console_log = v8::Function::new(scope, console::log::v8_log).unwrap();
-    register(scope, js_console, "log", js_console_log.into());
-
-    register(scope, js_global, "console", js_console.into());
+    // Create console
+    // @see https://developer.mozilla.org/ja/docs/Web/API/console
+    console::register(scope, js_global).unwrap();
 
     let code = v8::String::new(scope, &args.print).unwrap();
 
@@ -33,14 +31,4 @@ fn main() {
     let result = script.run(scope).unwrap();
     let result = result.to_string(scope).unwrap();
     println!("{}", result.to_rust_string_lossy(scope));
-}
-
-fn register(
-    scope: &PinScope,
-    object: v8::Local<v8::Object>,
-    key: &str,
-    value: v8::Local<v8::Value>,
-) -> Option<bool> {
-    let js_key = v8::String::new(scope, key)?;
-    object.set(scope, js_key.into(), value)
 }
