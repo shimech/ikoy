@@ -1,6 +1,9 @@
 {
+  "chat.extensionUnification.enabled": true,
   "editor.formatOnSave": true,
   "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "rust-analyzer.inlayHints.typeHints.enable": false,
+  "rust-analyzer.inlayHints.parameterHints.enable": false,
   "[rust]": {
     "editor.defaultFormatter": "rust-lang.rust-analyzer"
   }
