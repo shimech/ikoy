@@ -21,8 +21,10 @@ fn main() {
 
     let js_global = context.global(scope);
 
-    // Create console
-    // @see https://developer.mozilla.org/ja/docs/Web/API/console
+    /*
+     * Create console
+     * @see https://developer.mozilla.org/ja/docs/Web/API/console
+     */
     console::register(scope, js_global).unwrap();
 
     let code = v8::String::new(scope, &args.print).unwrap();
