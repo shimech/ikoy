@@ -1,7 +1,10 @@
 [package]
 name = "ikoy"
 version = "0.1.0"
+authors = ["Shuntaro Shimizu"]
 edition = "2024"
+description = "JavaScript runtime written in Rust"
 
 [dependencies]
+clap = { version = "4.5.53", features = ["derive"] }
 v8 = "142.2.0"
