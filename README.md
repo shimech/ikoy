@@ -91,11 +91,6 @@ cargo run -- javascript/example.js
 cargo run -- -p "your code here"
 ```
 
-## Dependencies
-
-- [v8](https://crates.io/crates/v8) - V8 JavaScript engine bindings for Rust
-- [clap](https://crates.io/crates/clap) - Command line argument parser
-
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
