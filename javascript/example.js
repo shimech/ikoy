@@ -24,11 +24,19 @@ clearTimeout(timeoutId2);
 let count = 0;
 const intervalId = setInterval(() => {
   count++;
-  console.log(`setInterval callback has been called ${count} times.`);
-}, 500);
+  console.log(
+    `setInterval callback of ${intervalId} has been called ${count} times.`
+  );
+}, 1000);
 setTimeout(() => {
   clearInterval(intervalId);
-}, 2000);
+  console.log(
+    `Timer [ID: ${intervalId}] created by setInterval has been cleared.`
+  );
+}, 5000);
+console.log(
+  `Timer [ID: ${intervalId}] created by setInterval has been created.`
+);
 
 /*
  * Test promises
@@ -38,3 +46,15 @@ Promise.resolve("2").then((value) => {
   console.log(`Promise: ${value}`);
 });
 console.log("Promise: 3");
+
+/*
+ * Test async/await
+ */
+async function testAsync() {
+  console.log("Async: 1");
+  await Promise.resolve("2").then((value) => {
+    console.log(`Async: ${value}`);
+  });
+  console.log("Async: 3");
+}
+testAsync();

@@ -19,5 +19,5 @@ pub fn v8_log<'s>(
     println!("[{}] {}", now, inputs.join(" "));
 
     // Sleep for 100ms to make it easier to check the print order.
-    sleep(Duration::from_millis(100));
+    sleep(Duration::from_millis(5));
 }
