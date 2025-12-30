@@ -1,7 +1,7 @@
 use crate::{event_loop::EventLoop, timer::delay::DEFAULT_DELAY};
 
-/// Implementation of [setTimeout](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)
-pub fn v8_set_timeout<'s>(
+/// Implementation of [setInterval](https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval)
+pub fn v8_set_interval<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
     args: v8::FunctionCallbackArguments<'s>,
     mut ret: v8::ReturnValue<'s>,
@@ -23,10 +23,11 @@ pub fn v8_set_timeout<'s>(
         .map(|param| v8::Global::new(scope, param))
         .collect();
 
-    let timer_id = EventLoop::get_mut().enqueue_once_timer(
+    let timer_id = EventLoop::get_mut().enqueue_repeating_timer(
         Box::new(move |scope| {
             let function_ref = function_ref.open(scope);
             let params: Vec<v8::Local<v8::Value>> = params
+                .clone()
                 .into_iter()
                 .map(|param| v8::Local::new(scope, param))
                 .collect();

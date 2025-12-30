@@ -1,4 +1,5 @@
-use crate::event_loop::callback::Callback;
+use crate::event_loop::callback::{Callback, CallbackOnce};
+use std::sync::Arc;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TimerId(String);
@@ -17,7 +18,7 @@ impl TimerId {
     }
 }
 
-#[derive(Clone, PartialEq, Debug)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 struct Timestamp(i64);
 
 impl Timestamp {
@@ -40,27 +41,90 @@ impl PartialOrd for Timestamp {
     }
 }
 
+impl Ord for Timestamp {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.0.cmp(&other.0)
+    }
+}
+
 pub struct Timer {
     pub id: TimerId,
-    callback: Callback,
     when: Timestamp,
+    kind: TimerKind,
+}
+
+enum TimerKind {
+    Once { callback: CallbackOnce },
+
+    Repeating { callback: Arc<Callback>, delay: u64 },
 }
 
 impl Timer {
-    pub(crate) fn new(callback: Callback, delay: u64) -> Self {
+    pub fn new_once(callback: CallbackOnce, delay: u64) -> Self {
         Self {
             id: TimerId::generate(),
-            callback,
             when: Timestamp::now().delta(delay as i64),
+            kind: TimerKind::Once { callback },
         }
     }
 
-    pub(crate) fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) {
-        (self.callback)(scope);
+    pub fn new_repeating(callback: Callback, delay: u64) -> Self {
+        Self {
+            id: TimerId::generate(),
+            when: Timestamp::now().delta(delay as i64),
+            kind: TimerKind::Repeating {
+                callback: Arc::new(callback),
+                delay,
+            },
+        }
+    }
+
+    pub(crate) fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) -> Option<Self> {
+        match self.kind {
+            TimerKind::Once { callback, .. } => {
+                (callback)(scope);
+                None
+            }
+            TimerKind::Repeating { ref callback, .. } => {
+                (callback)(scope);
+                Some(self.copy())
+            }
+        }
     }
 
     pub(crate) fn should_run(&self) -> bool {
         self.when <= Timestamp::now()
+    }
+
+    fn copy(self) -> Self {
+        match self.kind {
+            TimerKind::Repeating { callback, delay } => Timer {
+                id: self.id.clone(),
+                when: self.when.delta(delay as i64),
+                kind: TimerKind::Repeating { callback, delay },
+            },
+            _ => panic!("copy is allowed only for TimerKind::Repeating"),
+        }
+    }
+}
+
+impl PartialEq for Timer {
+    fn eq(&self, other: &Self) -> bool {
+        self.id == other.id
+    }
+}
+
+impl PartialOrd for Timer {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.when.cmp(&other.when))
+    }
+}
+
+impl Eq for Timer {}
+
+impl Ord for Timer {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.when.cmp(&other.when)
     }
 }
 

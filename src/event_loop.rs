@@ -4,21 +4,22 @@ pub mod timer;
 
 use crate::{
     event_loop::{
-        callback::Callback,
+        callback::{Callback, CallbackOnce},
         task::{Microtask, Task},
         timer::{Timer, TimerId},
     },
     helper,
 };
 use std::{
-    collections::{HashSet, VecDeque},
+    cmp::Reverse,
+    collections::{BinaryHeap, HashSet, VecDeque},
     sync::OnceLock,
 };
 
 static EVENT_LOOP: OnceLock<EventLoop> = OnceLock::new();
 
 pub struct EventLoop {
-    timer_queue: VecDeque<Timer>,
+    timer_queue: BinaryHeap<Reverse<Timer>>,
     cleared_timers: HashSet<TimerId>,
     task_queue: VecDeque<Task>,
     microtask_queue: VecDeque<Microtask>,
@@ -40,7 +41,7 @@ impl EventLoop {
 
     pub fn new() -> Self {
         Self {
-            timer_queue: VecDeque::new(),
+            timer_queue: BinaryHeap::new(),
             cleared_timers: HashSet::new(),
             task_queue: VecDeque::new(),
             microtask_queue: VecDeque::new(),
@@ -55,9 +56,9 @@ impl EventLoop {
                 });
             }
 
-            while let Some(timer) = self.timer_queue.front() {
+            while let Some(Reverse(timer)) = self.timer_queue.peek() {
                 if timer.should_run() {
-                    let timer = self.timer_queue.pop_front().unwrap();
+                    let Reverse(timer) = self.timer_queue.pop().unwrap();
 
                     if self.is_timer_cleared(&timer.id) {
                         self.cleared_timers.remove(&timer.id);
@@ -65,7 +66,9 @@ impl EventLoop {
                     }
 
                     helper::with_scope(isolate, |_, scope| {
-                        timer.run(scope);
+                        if let Some(new_timer) = timer.run(scope) {
+                            self.timer_queue.push(Reverse(new_timer));
+                        }
                     });
                 } else {
                     break;
@@ -81,10 +84,17 @@ impl EventLoop {
         }
     }
 
-    pub fn enqueue_timer(&mut self, callback: Callback, delay: u64) -> TimerId {
-        let timer = Timer::new(callback, delay);
+    pub fn enqueue_once_timer(&mut self, callback: CallbackOnce, delay: u64) -> TimerId {
+        let timer = Timer::new_once(callback, delay);
         let id = timer.id.clone();
-        self.timer_queue.push_back(timer);
+        self.timer_queue.push(Reverse(timer));
+        id
+    }
+
+    pub fn enqueue_repeating_timer(&mut self, callback: Callback, delay: u64) -> TimerId {
+        let timer = Timer::new_repeating(callback, delay);
+        let id = timer.id.clone();
+        self.timer_queue.push(Reverse(timer));
         id
     }
 

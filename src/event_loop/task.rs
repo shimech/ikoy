@@ -1,7 +1,7 @@
-use crate::event_loop::callback::Callback;
+use crate::event_loop::callback::CallbackOnce;
 
 pub struct Task {
-    callback: Callback,
+    callback: CallbackOnce,
 }
 
 impl Task {
@@ -11,7 +11,7 @@ impl Task {
 }
 
 pub struct Microtask {
-    callback: Callback,
+    callback: CallbackOnce,
 }
 
 impl Microtask {
