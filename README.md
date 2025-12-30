@@ -4,7 +4,7 @@ A JavaScript runtime written in Rust, powered by the V8 engine.
 
 ## Overview
 
-ikoy is a minimal JavaScript runtime that allows you to execute JavaScript code.
+ikoy (pronounced like "ai-koi") is a minimal JavaScript runtime that allows you to execute JavaScript code.
 
 ## Installation
 
