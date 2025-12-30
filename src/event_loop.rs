@@ -50,12 +50,7 @@ impl EventLoop {
 
     pub fn run(&mut self, isolate: &mut v8::Isolate) {
         while self.is_running() {
-            while let Some(micro_task) = self.microtask_queue.pop_front() {
-                helper::with_scope(isolate, |_, scope| {
-                    micro_task.run(scope);
-                });
-            }
-
+            // Timer phase
             while let Some(Reverse(timer)) = self.timer_queue.peek() {
                 if timer.should_run() {
                     let Reverse(timer) = self.timer_queue.pop().unwrap();
@@ -75,10 +70,17 @@ impl EventLoop {
                 }
             }
 
+            // Microtask phase
+            self.run_microtask(isolate);
+
+            // Task phase
             if let Some(task) = self.task_queue.pop_front() {
                 helper::with_scope(isolate, |_, scope| {
                     task.run(scope);
                 });
+
+                // Microtask phase
+                self.run_microtask(isolate);
                 continue;
             }
         }
@@ -107,6 +109,14 @@ impl EventLoop {
         !self.timer_queue.is_empty()
             || !self.task_queue.is_empty()
             || !self.microtask_queue.is_empty()
+    }
+
+    fn run_microtask(&mut self, isolate: &mut v8::Isolate) {
+        while let Some(micro_task) = self.microtask_queue.pop_front() {
+            helper::with_scope(isolate, |_, scope| {
+                micro_task.run(scope);
+            });
+        }
     }
 
     fn is_timer_cleared(&self, id: &TimerId) -> bool {
