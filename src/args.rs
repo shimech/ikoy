@@ -36,38 +36,54 @@ mod tests {
 
         #[test]
         fn returns_file_content_when_file_is_provided() {
+            // given
             let mut temp_file = tempfile::NamedTempFile::new().unwrap();
-            writeln!(temp_file, "console.log('hello');").unwrap();
-
+            let expected = "console.log('hello');\n";
+            writeln!(temp_file, "{}", expected.replace("\n", "")).unwrap();
             let args = Args {
                 file: Some(temp_file.path().to_str().unwrap().to_string()),
                 print: None,
             };
 
-            assert_eq!(args.script(), "console.log('hello');\n");
+            // when
+            let actual = args.script();
+
+            // then
+            assert_eq!(actual, expected);
         }
 
         #[test]
         fn returns_print_content_when_print_is_provided() {
+            // given
+            let expected = "1 + 2";
             let args = Args {
                 file: None,
-                print: Some("1 + 2".to_string()),
+                print: Some(expected.to_string()),
             };
 
-            assert_eq!(args.script(), "1 + 2");
+            // when
+            let actual = args.script();
+
+            // then
+            assert_eq!(actual, expected);
         }
 
         #[test]
         fn prefers_file_over_print() {
+            // given
             let mut temp_file = tempfile::NamedTempFile::new().unwrap();
-            writeln!(temp_file, "from file").unwrap();
-
+            let expected = "from file\n";
+            writeln!(temp_file, "{}", expected.replace("\n", "")).unwrap();
             let args = Args {
                 file: Some(temp_file.path().to_str().unwrap().to_string()),
                 print: Some("from print".to_string()),
             };
 
-            assert_eq!(args.script(), "from file\n");
+            // when
+            let actual = args.script();
+
+            // then
+            assert_eq!(actual, expected);
         }
 
         #[test]
@@ -75,11 +91,13 @@ mod tests {
             expected = "No JavaScript code provided. Please provide JavaScript file or inline script with --print option."
         )]
         fn panics_when_neither_file_nor_print_is_provided() {
+            // given
             let args = Args {
                 file: None,
                 print: None,
             };
 
+            // when
             args.script();
         }
     }
