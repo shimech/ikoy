@@ -1,15 +1,19 @@
 use crate::event_loop::callback::Callback;
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 pub struct TimerId(String);
 
 impl TimerId {
-    fn new() -> Self {
-        Self(uuid::Uuid::new_v4().to_string())
+    pub fn new(s: String) -> Self {
+        Self(s)
     }
 
     pub fn to_string(&self) -> String {
         self.0.clone()
+    }
+
+    fn generate() -> Self {
+        Self(uuid::Uuid::new_v4().to_string())
     }
 }
 
@@ -43,19 +47,19 @@ pub struct Timer {
 }
 
 impl Timer {
-    pub fn new(callback: Callback, delay: u64) -> Self {
+    pub(crate) fn new(callback: Callback, delay: u64) -> Self {
         Self {
-            id: TimerId::new(),
+            id: TimerId::generate(),
             callback,
             when: Timestamp::now().delta(delay as i64),
         }
     }
 
-    pub fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) {
+    pub(crate) fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) {
         (self.callback)(scope);
     }
 
-    pub fn should_run(&self) -> bool {
+    pub(crate) fn should_run(&self) -> bool {
         self.when <= Timestamp::now()
     }
 }

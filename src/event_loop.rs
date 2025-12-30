@@ -10,16 +10,21 @@ use crate::{
     },
     helper,
 };
-use std::{collections::VecDeque, sync::OnceLock};
+use std::{
+    collections::{HashSet, VecDeque},
+    sync::OnceLock,
+};
 
 static EVENT_LOOP: OnceLock<EventLoop> = OnceLock::new();
 
 pub struct EventLoop {
     timer_queue: VecDeque<Timer>,
+    cleared_timers: HashSet<TimerId>,
     task_queue: VecDeque<Task>,
     microtask_queue: VecDeque<Microtask>,
 }
 
+// This runtime works on single thread. So, mutex is not needed.
 unsafe impl Send for EventLoop {}
 unsafe impl Sync for EventLoop {}
 
@@ -36,6 +41,7 @@ impl EventLoop {
     pub fn new() -> Self {
         Self {
             timer_queue: VecDeque::new(),
+            cleared_timers: HashSet::new(),
             task_queue: VecDeque::new(),
             microtask_queue: VecDeque::new(),
         }
@@ -52,6 +58,12 @@ impl EventLoop {
             while let Some(timer) = self.timer_queue.front() {
                 if timer.should_run() {
                     let timer = self.timer_queue.pop_front().unwrap();
+
+                    if self.is_timer_cleared(&timer.id) {
+                        self.cleared_timers.remove(&timer.id);
+                        continue;
+                    }
+
                     helper::with_scope(isolate, |_, scope| {
                         timer.run(scope);
                     });
@@ -76,9 +88,18 @@ impl EventLoop {
         id
     }
 
+    pub fn clear_timer(&mut self, id: &TimerId) {
+        // Cleared timer ids are stored in a set to execute this method with O(1) time complexity.
+        self.cleared_timers.insert(id.clone());
+    }
+
     fn is_running(&self) -> bool {
         !self.timer_queue.is_empty()
             || !self.task_queue.is_empty()
             || !self.microtask_queue.is_empty()
+    }
+
+    fn is_timer_cleared(&self, id: &TimerId) -> bool {
+        self.cleared_timers.contains(id)
     }
 }

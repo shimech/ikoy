@@ -1,3 +1,4 @@
+/// Implementation of [console.log](https://developer.mozilla.org/en-US/docs/Web/API/console/log_static)
 pub fn v8_log<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
     args: v8::FunctionCallbackArguments<'s>,
