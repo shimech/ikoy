@@ -5,7 +5,11 @@ pub struct Task {
 }
 
 impl Task {
-    pub fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) {
+    pub(crate) fn new(callback: CallbackOnce) -> Self {
+        Self { callback }
+    }
+
+    pub(crate) fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) {
         (self.callback)(scope);
     }
 }

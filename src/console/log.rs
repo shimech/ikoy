@@ -1,3 +1,5 @@
+use std::{thread::sleep, time::Duration};
+
 /// Implementation of [console.log](https://developer.mozilla.org/en-US/docs/Web/API/console/log_static)
 pub fn v8_log<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
@@ -13,7 +15,9 @@ pub fn v8_log<'s>(
             }
         })
         .collect();
-
     let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
     println!("[{}] {}", now, inputs.join(" "));
+
+    // Sleep for 100ms to make it easier to check the print order.
+    sleep(Duration::from_millis(100));
 }

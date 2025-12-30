@@ -86,6 +86,11 @@ impl EventLoop {
         }
     }
 
+    pub fn enqueue_task(&mut self, callback: CallbackOnce) {
+        let task = Task::new(callback);
+        self.task_queue.push_back(task);
+    }
+
     pub fn enqueue_once_timer(&mut self, callback: CallbackOnce, delay: u64) -> TimerId {
         let timer = Timer::new_once(callback, delay);
         let id = timer.id.clone();
@@ -112,6 +117,10 @@ impl EventLoop {
     }
 
     fn run_microtask(&mut self, isolate: &mut v8::Isolate) {
+        // Run V8's internal microtask queue.
+        isolate.perform_microtask_checkpoint();
+
+        // Run ikoy's microtask queue.
         while let Some(micro_task) = self.microtask_queue.pop_front() {
             helper::with_scope(isolate, |_, scope| {
                 micro_task.run(scope);
