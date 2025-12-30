@@ -16,7 +16,7 @@ ikoy is a minimal JavaScript runtime that allows you to execute JavaScript code.
 ### Build from Source
 
 ```bash
-git clone <repository-url>
+git clone https://github.com/shimech/ikoy.git
 cd ikoy
 cargo build --release
 ```
@@ -25,38 +25,49 @@ The binary will be available at `target/release/ikoy`.
 
 ## Usage
 
-### Basic Usage
+### Execute a JavaScript File
 
-Execute JavaScript code using the `--print` (or `-p`) flag:
+Run a JavaScript file directly, just like Node.js:
 
 ```bash
-ikoy --print "'Hello' + ' World!'"
+ikoy script.js
+```
+
+Example:
+
+```bash
+ikoy javascript/example.js
+# Output:
+# Hello, This is a JavaScript file!
+# 1 + 2 = 3
+```
+
+### Evaluate Inline JavaScript
+
+Use the `--print` (or `-p`) flag to evaluate JavaScript code and print the result:
+
+```bash
+ikoy -p "1 + 2"
+# Output: 3
+```
+
+```bash
+ikoy -p "'Hello' + ' World!'"
 # Output: Hello World!
-```
-
-### Using console.log
-
-```bash
-ikoy --print "console.log('Hello', 'World', 123)"
-# Output: Hello World 123
-```
-
-### Mathematical Operations
-
-```bash
-ikoy --print "2 + 2"
-# Output: 4
 ```
 
 ## Command Line Options
 
 ```
-Usage: ikoy --print <PRINT>
+Usage: ikoy [OPTIONS] [script.js]
+
+Arguments:
+  [script.js]  Path to the JavaScript file
 
 Options:
-  -p, --print <PRINT>  Evaluate JavaScript and print result
-  -h, --help           Print help
-  -V, --version        Print version
+  -p, --print <...>  Evaluate JavaScript code and print result
+  -h, --help         Print help
+  -V, --version      Print version
 ```
 
 ## Development
@@ -76,7 +87,8 @@ cargo build
 ### Running in Debug Mode
 
 ```bash
-cargo run -- --print "your code here"
+cargo run -- javascript/example.js
+cargo run -- -p "your code here"
 ```
 
 ## Dependencies
