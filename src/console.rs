@@ -1,6 +1,6 @@
-mod log;
-
 use crate::helper;
+
+mod log;
 
 pub fn register<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,

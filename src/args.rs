@@ -1,6 +1,5 @@
-use std::fs;
-
 use clap::Parser;
+use std::fs;
 
 #[derive(Parser, Debug)]
 #[command(version, about, long_about = None)]

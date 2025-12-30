@@ -1,7 +1,3 @@
-mod callback;
-pub mod task;
-pub mod timer;
-
 use crate::{
     event_loop::{
         callback::{Callback, CallbackOnce},
@@ -15,6 +11,10 @@ use std::{
     collections::{BinaryHeap, HashSet, VecDeque},
     sync::OnceLock,
 };
+
+mod callback;
+pub mod task;
+pub mod timer;
 
 static EVENT_LOOP: OnceLock<EventLoop> = OnceLock::new();
 

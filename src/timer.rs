@@ -1,10 +1,10 @@
+use crate::helper;
+
 mod clear_interval;
 mod clear_timeout;
 mod delay;
 mod set_interval;
 mod set_timeout;
-
-use crate::helper;
 
 pub fn register<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,

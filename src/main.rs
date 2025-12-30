@@ -1,13 +1,14 @@
-mod args;
-mod console;
-mod event_loop;
-mod helper;
-mod timer;
-
 use crate::{args::Args, event_loop::EventLoop};
 use clap::Parser;
 use std::cell::RefCell;
 use std::rc::Rc;
+
+mod args;
+mod console;
+mod event_loop;
+mod fs;
+mod helper;
+mod timer;
 
 fn main() {
     let args = Args::parse();
@@ -37,16 +38,23 @@ fn main() {
          */
         console::register(scope, js_global).unwrap();
 
+        /*
+         * Create fs
+         * @see https://nodejs.org/api/fs.html
+         */
+        fs::register(scope, js_global).unwrap();
+
         let code = v8::String::new(scope, &script).unwrap();
         let script = v8::Script::compile(scope, code, None).unwrap();
         let script = v8::Global::new(scope, script);
 
         EventLoop::get_mut().enqueue_task(Box::new(move |scope| {
             let script = script.open(scope);
-            let ret = script.run(scope).unwrap();
-            let ret = ret.to_string(scope).unwrap();
-            let ret = ret.to_rust_string_lossy(scope);
-            *result_clone.borrow_mut() = Some(ret);
+            let ret = script
+                .run(scope)
+                .and_then(|v| v.to_string(scope))
+                .map(|v| v.to_rust_string_lossy(scope));
+            *result_clone.borrow_mut() = ret;
         }));
     });
 
