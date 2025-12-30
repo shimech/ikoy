@@ -30,7 +30,7 @@ unsafe impl Sync for EventLoop {}
 
 impl EventLoop {
     pub fn get() -> &'static Self {
-        EVENT_LOOP.get_or_init(|| Self::new())
+        EVENT_LOOP.get_or_init(Self::new)
     }
 
     #[allow(invalid_reference_casting)]

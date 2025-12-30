@@ -8,8 +8,8 @@ impl TimerId {
         Self(s)
     }
 
-    pub fn to_string(&self) -> String {
-        self.0.clone()
+    pub fn into_raw(self) -> String {
+        self.0
     }
 
     fn generate() -> Self {

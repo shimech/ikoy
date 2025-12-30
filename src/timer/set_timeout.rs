@@ -38,9 +38,5 @@ pub fn v8_set_timeout<'s>(
         delay,
     );
 
-    ret.set(
-        v8::String::new(scope, &timer_id.to_string())
-            .unwrap()
-            .into(),
-    );
+    ret.set(v8::String::new(scope, &timer_id.into_raw()).unwrap().into());
 }

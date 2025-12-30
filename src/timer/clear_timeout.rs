@@ -10,7 +10,7 @@ pub fn v8_clear_timeout<'s>(
         .get(0)
         .to_string(scope)
         .map(|s| s.to_rust_string_lossy(scope))
-        .map(|s| TimerId::new(s))
+        .map(TimerId::new)
         .unwrap();
 
     EventLoop::get_mut().clear_timer(&timer_id);
