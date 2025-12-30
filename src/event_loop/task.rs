@@ -1,9 +1,9 @@
 pub struct Task {
-    callback: Box<dyn FnOnce()>,
+    callback: Box<dyn FnOnce() + Send>,
 }
 
 impl Task {
-    pub fn new(callback: Box<dyn FnOnce()>) -> Self {
+    pub fn new(callback: Box<dyn FnOnce() + Send>) -> Self {
         Self { callback }
     }
 
@@ -13,11 +13,11 @@ impl Task {
 }
 
 pub struct Microtask {
-    callback: Box<dyn FnOnce()>,
+    callback: Box<dyn FnOnce() + Send>,
 }
 
 impl Microtask {
-    pub fn new(callback: Box<dyn FnOnce()>) -> Self {
+    pub fn new(callback: Box<dyn FnOnce() + Send>) -> Self {
         Self { callback }
     }
 

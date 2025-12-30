@@ -9,7 +9,6 @@ use clap::Parser;
 fn main() {
     let args = Args::parse();
     let script = args.script();
-    let mut event_loop = EventLoop::new();
 
     let platform = v8::new_default_platform(0, false).make_shared();
     v8::V8::initialize_platform(platform);
@@ -35,6 +34,7 @@ fn main() {
     let script = v8::Script::compile(scope, code, None).unwrap();
     let result = script.run(scope).unwrap();
 
+    let mut event_loop = EventLoop::get().lock().unwrap();
     event_loop.run();
 
     if args.print.is_some() {
