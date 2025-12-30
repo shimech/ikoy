@@ -6,7 +6,9 @@ edition = "2024"
 description = "JavaScript runtime written in Rust"
 
 [dependencies]
+chrono = "0.4.42"
 clap = { version = "4.5.53", features = ["derive"] }
+uuid = { version = "1.19.0", features = ["v4"] }
 v8 = "142.2.0"
 
 [dev-dependencies]

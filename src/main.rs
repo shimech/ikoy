@@ -2,6 +2,7 @@ mod args;
 mod console;
 mod event_loop;
 mod helper;
+mod timer;
 
 use crate::{args::Args, event_loop::EventLoop};
 use clap::Parser;
@@ -16,29 +17,31 @@ fn main() {
 
     let isolate = &mut v8::Isolate::new(Default::default());
 
-    let scope = std::pin::pin!(v8::HandleScope::new(isolate));
-    let scope = &mut scope.init();
-    let context = v8::Context::new(scope, Default::default());
-    let scope = &mut v8::ContextScope::new(scope, context);
+    helper::with_scope(isolate, |context, scope| {
+        let js_global = context.global(scope);
 
-    let js_global = context.global(scope);
+        /*
+         * Create timers
+         * @see https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#timers
+         */
+        timer::register(scope, js_global).unwrap();
 
-    /*
-     * Create console
-     * @see https://developer.mozilla.org/ja/docs/Web/API/console
-     */
-    console::register(scope, js_global).unwrap();
+        /*
+         * Create console
+         * @see https://console.spec.whatwg.org
+         */
+        console::register(scope, js_global).unwrap();
 
-    let code = v8::String::new(scope, &script).unwrap();
+        let code = v8::String::new(scope, &script).unwrap();
 
-    let script = v8::Script::compile(scope, code, None).unwrap();
-    let result = script.run(scope).unwrap();
+        let script = v8::Script::compile(scope, code, None).unwrap();
+        let result = script.run(scope).unwrap();
 
-    let mut event_loop = EventLoop::get().lock().unwrap();
-    event_loop.run();
+        EventLoop::get_mut().run(scope);
 
-    if args.print.is_some() {
-        let result = result.to_string(scope).unwrap();
-        println!("{}", result.to_rust_string_lossy(scope));
-    }
+        if args.print.is_some() {
+            let result = result.to_string(scope).unwrap();
+            println!("{}", result.to_rust_string_lossy(scope));
+        }
+    });
 }
