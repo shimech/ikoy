@@ -14,5 +14,6 @@ pub fn v8_log<'s>(
         })
         .collect();
 
-    println!("{}", inputs.join(" "));
+    let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
+    println!("[{}] {}", now, inputs.join(" "));
 }

@@ -1,5 +1,5 @@
 use crate::event_loop::callback::{Callback, CallbackOnce};
-use std::sync::Arc;
+use std::rc::Rc;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TimerId(String);
@@ -37,7 +37,7 @@ impl Timestamp {
 
 impl PartialOrd for Timestamp {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.0.cmp(&other.0))
+        Some(self.cmp(other))
     }
 }
 
@@ -56,7 +56,7 @@ pub struct Timer {
 enum TimerKind {
     Once { callback: CallbackOnce },
 
-    Repeating { callback: Arc<Callback>, delay: u64 },
+    Repeating { callback: Rc<Callback>, delay: u64 },
 }
 
 impl Timer {
@@ -73,7 +73,7 @@ impl Timer {
             id: TimerId::generate(),
             when: Timestamp::now().delta(delay as i64),
             kind: TimerKind::Repeating {
-                callback: Arc::new(callback),
+                callback: Rc::new(callback),
                 delay,
             },
         }
@@ -116,7 +116,7 @@ impl PartialEq for Timer {
 
 impl PartialOrd for Timer {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        Some(self.when.cmp(&other.when))
+        Some(self.cmp(other))
     }
 }
 
