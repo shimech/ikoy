@@ -59,11 +59,30 @@ async function testAsync() {
 }
 testAsync();
 
-/*
- * Test fsPromises.readFile
- */
-const filePath = "./javascript/assets/text.txt";
-fsPromises.readFile(filePath).then((data) => {
-  console.log(`[${filePath}] ${data}`);
-});
-console.log(`reading ${filePath}...`);
+{
+  /*
+   * Test fs.readFile
+   */
+  const filePath = "./javascript/assets/fs.readFile.txt";
+  fs.readFile(filePath, (_, data) => {
+    console.log(`[${filePath}] ${data}`);
+  });
+  console.log(`reading ${filePath}...`);
+
+  const notExistedFilePath = "./javascript/assets/fs.readFile.notExisted.txt";
+  fs.readFile(notExistedFilePath, (err, _) => {
+    console.error(err);
+  });
+  console.log(`reading ${filePath}...`);
+}
+
+{
+  /*
+   * Test fsPromises.readFile
+   */
+  const filePath = "./javascript/assets/fsPromises.readFile.txt";
+  fsPromises.readFile(filePath).then((data) => {
+    console.log(`[${filePath}] ${data}`);
+  });
+  console.log(`reading ${filePath}...`);
+}
