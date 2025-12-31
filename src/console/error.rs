@@ -1,7 +1,7 @@
 use crate::console;
 
-/// Implementation of [console.log](https://developer.mozilla.org/en-US/docs/Web/API/console/log_static)
-pub fn v8_log<'s>(
+/// Implementation of [console.error](https://developer.mozilla.org/en-US/docs/Web/API/console/error_static)
+pub fn v8_error<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
     args: v8::FunctionCallbackArguments<'s>,
     _ret: v8::ReturnValue<'s>,
@@ -16,7 +16,7 @@ pub fn v8_log<'s>(
         })
         .collect();
     let now = chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f");
-    println!("[{}] {}", now, inputs.join(" "));
+    eprintln!("[{}] {}", now, inputs.join(" "));
 
     console::sleep::sleep();
 }
