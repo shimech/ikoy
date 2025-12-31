@@ -1,5 +1,4 @@
 use crate::event_loop::callback::{Callback, CallbackOnce};
-use std::rc::Rc;
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TimerId(String);
@@ -56,7 +55,7 @@ pub struct Timer {
 enum TimerKind {
     Once { callback: CallbackOnce },
 
-    Repeating { callback: Rc<Callback>, delay: u64 },
+    Repeating { callback: Callback, delay: u64 },
 }
 
 impl Timer {
@@ -72,20 +71,22 @@ impl Timer {
         Self {
             id: TimerId::generate(),
             when: Timestamp::now().delta(delay as i64),
-            kind: TimerKind::Repeating {
-                callback: Rc::new(callback),
-                delay,
-            },
+            kind: TimerKind::Repeating { callback, delay },
         }
     }
 
-    pub(crate) fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) -> Option<Self> {
+    pub(crate) fn run<'s>(
+        mut self,
+        scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
+    ) -> Option<Self> {
         match self.kind {
             TimerKind::Once { callback, .. } => {
                 (callback)(scope);
                 None
             }
-            TimerKind::Repeating { ref callback, .. } => {
+            TimerKind::Repeating {
+                ref mut callback, ..
+            } => {
                 (callback)(scope);
                 Some(self.copy())
             }

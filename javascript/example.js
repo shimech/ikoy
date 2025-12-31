@@ -60,13 +60,10 @@ async function testAsync() {
 testAsync();
 
 /*
- * Test fs.readFile
+ * Test fsPromises.readFile
  */
 const filePath = "./javascript/assets/text.txt";
-fs.readFile(filePath, (err, data) => {
-  if (err) {
-    throw err;
-  }
+fsPromises.readFile(filePath).then((data) => {
   console.log(`[${filePath}] ${data}`);
 });
 console.log(`reading ${filePath}...`);

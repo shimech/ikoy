@@ -1,4 +1,4 @@
-use crate::{event_loop::EventLoop, timer::delay::DEFAULT_DELAY};
+use crate::{event_loop, timer::delay::DEFAULT_DELAY};
 
 /// Implementation of [setTimeout](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)
 pub fn v8_set_timeout<'s>(
@@ -23,15 +23,15 @@ pub fn v8_set_timeout<'s>(
         .map(|param| v8::Global::new(scope, param))
         .collect();
 
-    let timer_id = EventLoop::get_mut().enqueue_once_timer(
+    let timer_id = event_loop::EventLoop::get_mut().enqueue_once_timer(
         Box::new(move |scope| {
             let function_ref = function_ref.open(scope);
             let params: Vec<v8::Local<v8::Value>> = params
                 .into_iter()
                 .map(|param| v8::Local::new(scope, param))
                 .collect();
-
             function_ref.call(scope, v8::undefined(scope).into(), &params);
+            event_loop::task_result::fulfilled()
         }),
         delay,
     );

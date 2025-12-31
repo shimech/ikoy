@@ -7,6 +7,7 @@ mod args;
 mod console;
 mod event_loop;
 mod fs;
+mod fs_promises;
 mod helper;
 mod timer;
 
@@ -45,17 +46,24 @@ async fn main() {
          */
         fs::register(scope, js_global).unwrap();
 
+        /*
+         * Create fsPromises
+         * @see https://nodejs.org/api/fs.html#promises-api
+         */
+        fs_promises::register(scope, js_global).unwrap();
+
         let code = v8::String::new(scope, &script).unwrap();
         let script = v8::Script::compile(scope, code, None).unwrap();
         let script = v8::Global::new(scope, script);
 
-        EventLoop::get_mut().enqueue_task(Box::new(move |scope| {
+        event_loop::EventLoop::get_mut().enqueue_task(Box::new(move |scope| {
             let script = script.open(scope);
             let ret = script
                 .run(scope)
                 .and_then(|v| v.to_string(scope))
                 .map(|v| v.to_rust_string_lossy(scope));
             *result_clone.borrow_mut() = ret;
+            event_loop::task_result::fulfilled()
         }));
     });
 

@@ -1,7 +1,8 @@
 use crate::{
     event_loop::{
         callback::{Callback, CallbackOnce},
-        task::{Microtask, Task},
+        micro_task::Microtask,
+        task::Task,
         timer::{Timer, TimerId},
     },
     helper,
@@ -13,7 +14,9 @@ use std::{
 };
 
 mod callback;
+pub mod micro_task;
 pub mod task;
+pub mod task_result;
 pub mod timer;
 
 static EVENT_LOOP: OnceLock<EventLoop> = OnceLock::new();
@@ -74,9 +77,11 @@ impl EventLoop {
             self.run_microtask(isolate);
 
             // Task phase
-            if let Some(task) = self.task_queue.pop_front() {
+            if let Some(mut task) = self.task_queue.pop_front() {
                 helper::with_scope(isolate, |_, scope| {
-                    task.run(scope);
+                    task.run(scope).unwrap_or_else(|| {
+                        self.task_queue.push_back(task);
+                    });
                 });
 
                 // Microtask phase
@@ -86,7 +91,7 @@ impl EventLoop {
         }
     }
 
-    pub fn enqueue_task(&mut self, callback: CallbackOnce) {
+    pub fn enqueue_task(&mut self, callback: Callback) {
         let task = Task::new(callback);
         self.task_queue.push_back(task);
     }

@@ -1,25 +1,15 @@
-use crate::event_loop::callback::CallbackOnce;
+use crate::event_loop::{callback::Callback, task_result::TaskResult};
 
 pub struct Task {
-    callback: CallbackOnce,
+    callback: Callback,
 }
 
 impl Task {
-    pub(crate) fn new(callback: CallbackOnce) -> Self {
+    pub(crate) fn new(callback: Callback) -> Self {
         Self { callback }
     }
 
-    pub(crate) fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) {
-        (self.callback)(scope);
-    }
-}
-
-pub struct Microtask {
-    callback: CallbackOnce,
-}
-
-impl Microtask {
-    pub fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) {
-        (self.callback)(scope);
+    pub(crate) fn run<'s>(&mut self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) -> TaskResult {
+        (self.callback)(scope)
     }
 }
