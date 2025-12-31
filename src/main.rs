@@ -1,4 +1,4 @@
-use crate::{args::Args, event_loop::EventLoop};
+use crate::args::Args;
 use clap::Parser;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -67,7 +67,7 @@ async fn main() {
         }));
     });
 
-    EventLoop::get_mut().run(isolate);
+    event_loop::EventLoop::get_mut().run(isolate);
 
     if args.print.is_some() {
         if let Some(ref result) = *result.borrow() {
