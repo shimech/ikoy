@@ -10,7 +10,8 @@ mod fs;
 mod helper;
 mod timer;
 
-fn main() {
+#[tokio::main]
+async fn main() {
     let args = Args::parse();
     let script = args.script();
 

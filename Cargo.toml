@@ -8,6 +8,7 @@ description = "JavaScript runtime written in Rust"
 [dependencies]
 chrono = "0.4.42"
 clap = { version = "4.5.53", features = ["derive"] }
+tokio = { version = "1.48.0", features = ["full"] }
 uuid = { version = "1.19.0", features = ["v4"] }
 v8 = "142.2.0"
 
