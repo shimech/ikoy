@@ -1,3 +1,6 @@
+// import fs from "node:fs";
+// import fsPromises from "node:fs/promises";
+
 {
   /*
    * Test if ikoy can execute JavaScript code from a file.
@@ -80,7 +83,7 @@
   fs.readFile(notExistedFilePath, (err, _) => {
     console.error(err);
   });
-  console.log(`reading ${filePath}...`);
+  console.log(`reading ${notExistedFilePath}...`);
 }
 
 {
