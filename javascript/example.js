@@ -1,3 +1,6 @@
+// import fs from "node:fs";
+// import fsPromises from "node:fs/promises";
+
 {
   /*
    * Test if ikoy can execute JavaScript code from a file.
