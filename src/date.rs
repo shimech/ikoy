@@ -1,17 +1,18 @@
-use crate::helper;
+use crate::helper::{self, Register, Registerable};
 
-pub fn register<'s>(
-    scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
-    global: v8::Local<'s, v8::Object>,
-) -> Option<bool> {
-    let date = v8::Object::new(scope);
+pub struct Date;
 
-    let now = v8::Function::new(scope, v8_now)?;
-    helper::register(scope, date, "now", now.into())?;
+impl<'s> Registerable<'s> for Date {
+    const REGISTER: Register<'s> = |scope, global| {
+        let date = v8::Object::new(scope);
 
-    helper::register(scope, global, "Date", date.into())?;
+        let now = v8::Function::new(scope, v8_now)?;
+        helper::register(scope, date, "now", now.into())?;
 
-    Some(true)
+        helper::register(scope, global, "Date", date.into())?;
+
+        Some(true)
+    };
 }
 
 fn v8_now<'s>(

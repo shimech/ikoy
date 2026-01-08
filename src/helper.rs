@@ -9,6 +9,9 @@ where
     f(context, scope)
 }
 
+pub type Register<'s> =
+    fn(&mut v8::PinnedRef<'s, v8::HandleScope>, v8::Local<'s, v8::Object>) -> Option<bool>;
+
 pub fn register<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
     object: v8::Local<'s, v8::Object>,
@@ -17,4 +20,8 @@ pub fn register<'s>(
 ) -> Option<bool> {
     let js_key = v8::String::new(scope, key)?;
     object.set(scope, js_key.into(), value)
+}
+
+pub trait Registerable<'s> {
+    const REGISTER: Register<'s>;
 }

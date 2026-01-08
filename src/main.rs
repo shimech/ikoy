@@ -1,6 +1,7 @@
 use crate::args::Args;
 use crate::event_loop::EventLoop;
 use crate::event_loop::executable::ExecuteState;
+use crate::helper::{Register, Registerable};
 use clap::Parser;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -13,6 +14,7 @@ mod fs;
 mod fs_promises;
 mod helper;
 mod ikoy;
+mod microtask;
 mod timer;
 
 #[tokio::main]
@@ -31,40 +33,44 @@ async fn main() {
 
     helper::with_scope(isolate, |context, scope| {
         let js_global = context.global(scope);
+        let registers: Vec<Register> = vec![
+            /*
+             * Original
+             */
+            ikoy::Ikoy::REGISTER,
+            /*
+             * Create Date
+             */
+            date::Date::REGISTER,
+            /*
+             * Create microtask
+             */
+            microtask::Microtask::REGISTER,
+            /*
+             * Create timers
+             * @see https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#timers
+             */
+            timer::Timer::REGISTER,
+            /*
+             * Create console
+             * @see https://console.spec.whatwg.org
+             */
+            console::Console::REGISTER,
+            /*
+             * Create fs
+             * @see https://nodejs.org/api/fs.html
+             */
+            fs::Fs::REGISTER,
+            /*
+             * Create fsPromises
+             * @see https://nodejs.org/api/fs.html#promises-api
+             */
+            fs_promises::FsPromises::REGISTER,
+        ];
 
-        /*
-         * Original
-         */
-        ikoy::register(scope, js_global).unwrap();
-
-        /*
-         * Create Date
-         */
-        date::register(scope, js_global).unwrap();
-
-        /*
-         * Create timers
-         * @see https://html.spec.whatwg.org/multipage/timers-and-user-prompts.html#timers
-         */
-        timer::register(scope, js_global).unwrap();
-
-        /*
-         * Create console
-         * @see https://console.spec.whatwg.org
-         */
-        console::register(scope, js_global).unwrap();
-
-        /*
-         * Create fs
-         * @see https://nodejs.org/api/fs.html
-         */
-        fs::register(scope, js_global).unwrap();
-
-        /*
-         * Create fsPromises
-         * @see https://nodejs.org/api/fs.html#promises-api
-         */
-        fs_promises::register(scope, js_global).unwrap();
+        for register in registers {
+            register(scope, js_global).unwrap();
+        }
 
         let code = v8::String::new(scope, &script).unwrap();
         let script = v8::Script::compile(scope, code, None).unwrap();

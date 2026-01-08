@@ -1,15 +1,16 @@
-use crate::helper;
+use crate::helper::{self, Register, Registerable};
 
 mod read_file;
 
-pub fn register<'s>(
-    scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
-    global: v8::Local<'s, v8::Object>,
-) -> Option<bool> {
-    let fs = v8::Object::new(scope);
+pub struct FsPromises;
 
-    let read_file = v8::Function::new(scope, read_file::v8_read_file)?;
-    helper::register(scope, fs, "readFile", read_file.into())?;
+impl<'s> Registerable<'s> for FsPromises {
+    const REGISTER: Register<'s> = |scope, global| {
+        let fs_promises = v8::Object::new(scope);
 
-    helper::register(scope, global, "fsPromises", fs.into())
+        let read_file = v8::Function::new(scope, read_file::v8_read_file)?;
+        helper::register(scope, fs_promises, "readFile", read_file.into())?;
+
+        helper::register(scope, global, "fsPromises", fs_promises.into())
+    };
 }

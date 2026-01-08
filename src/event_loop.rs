@@ -1,7 +1,7 @@
 use crate::{
     event_loop::{
         executable::{Callback, CallbackOnce, Executable},
-        micro_task::Microtask,
+        microtask::Microtask,
         task::Task,
         timer::{Timer, TimerId},
     },
@@ -14,7 +14,7 @@ use std::{
 };
 
 pub mod executable;
-pub mod micro_task;
+pub mod microtask;
 pub mod task;
 pub mod timer;
 
@@ -68,6 +68,11 @@ impl EventLoop {
     pub fn enqueue_task(&mut self, callback: Callback) {
         let task = Task::new(callback);
         self.task_queue.push_back(task);
+    }
+
+    pub fn enqueue_microtask(&mut self, callback: CallbackOnce) {
+        let microtask = Microtask::new(callback);
+        self.microtask_queue.push_back(microtask);
     }
 
     pub fn enqueue_once_timer(&mut self, callback: CallbackOnce, delay: u64) -> TimerId {

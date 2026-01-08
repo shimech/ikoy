@@ -1,20 +1,21 @@
-use crate::helper;
+use crate::helper::{self, Register, Registerable};
 
 mod error;
 mod log;
 mod sleep;
 
-pub fn register<'s>(
-    scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
-    global: v8::Local<'s, v8::Object>,
-) -> Option<bool> {
-    let console = v8::Object::new(scope);
+pub struct Console;
 
-    let log = v8::Function::new(scope, log::v8_log)?;
-    helper::register(scope, console, "log", log.into())?;
+impl<'s> Registerable<'s> for Console {
+    const REGISTER: Register<'s> = |scope, global| {
+        let console = v8::Object::new(scope);
 
-    let error = v8::Function::new(scope, error::v8_error)?;
-    helper::register(scope, console, "error", error.into())?;
+        let log = v8::Function::new(scope, log::v8_log)?;
+        helper::register(scope, console, "log", log.into())?;
 
-    helper::register(scope, global, "console", console.into())
+        let error = v8::Function::new(scope, error::v8_error)?;
+        helper::register(scope, console, "error", error.into())?;
+
+        helper::register(scope, global, "console", console.into())
+    };
 }

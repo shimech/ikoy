@@ -1,21 +1,22 @@
 use crate::{
     event_loop::{EventLoop, executable::ExecuteState},
-    helper,
+    helper::{self, Register, Registerable},
 };
 use std::{thread, time};
 
-pub fn register<'s>(
-    scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
-    global: v8::Local<'s, v8::Object>,
-) -> Option<bool> {
-    let ikoy = v8::Object::new(scope);
+pub struct Ikoy;
 
-    let super_heavy_process = v8::Function::new(scope, v8_super_heavy_process)?;
-    helper::register(scope, ikoy, "superHeavyProcess", super_heavy_process.into())?;
+impl<'s> Registerable<'s> for Ikoy {
+    const REGISTER: Register<'s> = |scope, global| {
+        let ikoy = v8::Object::new(scope);
 
-    helper::register(scope, global, "ikoy", ikoy.into())?;
+        let super_heavy_process = v8::Function::new(scope, v8_super_heavy_process)?;
+        helper::register(scope, ikoy, "superHeavyProcess", super_heavy_process.into())?;
 
-    Some(true)
+        helper::register(scope, global, "ikoy", ikoy.into())?;
+
+        Some(true)
+    };
 }
 
 fn v8_super_heavy_process<'s>(

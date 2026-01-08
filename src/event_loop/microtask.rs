@@ -4,6 +4,12 @@ pub(super) struct Microtask {
     callback: CallbackOnce,
 }
 
+impl Microtask {
+    pub(super) fn new(callback: CallbackOnce) -> Self {
+        Self { callback }
+    }
+}
+
 impl Executable for Microtask {
     type NextExecutable = Self;
 
