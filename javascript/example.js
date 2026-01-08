@@ -1,3 +1,4 @@
+// Comment out when running with ikoy.
 // import fs from "node:fs";
 // import fsPromises from "node:fs/promises";
 
@@ -42,6 +43,12 @@
   console.log(
     `Timer [ID: ${intervalId}] created by setInterval has been created.`
   );
+}
+
+{
+  setImmediate(() => {
+    console.log("immediate");
+  });
 }
 
 {

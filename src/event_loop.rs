@@ -27,6 +27,7 @@ pub struct EventLoop {
     cleared_timers: HashSet<TimerId>,
     task_queue: VecDeque<Task>,
     microtask_queue: VecDeque<Microtask>,
+    immediate_timer_queue: VecDeque<Timer>,
 }
 
 // This runtime works on single thread. So, mutex is not needed.
@@ -49,6 +50,7 @@ impl EventLoop {
             cleared_timers: HashSet::new(),
             task_queue: VecDeque::new(),
             microtask_queue: VecDeque::new(),
+            immediate_timer_queue: VecDeque::new(),
         }
     }
 
@@ -79,6 +81,13 @@ impl EventLoop {
         let timer = Timer::new_repeating(callback, delay);
         let id = timer.id.clone();
         self.timer_queue.push(Reverse(timer));
+        id
+    }
+
+    pub fn enqueue_immediate_timer(&mut self, callback: CallbackOnce) -> TimerId {
+        let timer = Timer::new_immediate(callback);
+        let id = timer.id.clone();
+        self.immediate_timer_queue.push_back(timer);
         id
     }
 
@@ -123,6 +132,11 @@ impl EventLoop {
                 self.task_queue.push_back(new_task);
             }
 
+            // Check if immediate timers are in the queue; if so, proceed to the next phase.
+            if self.has_immediate_timer() {
+                break;
+            }
+
             // Check if the next scheduled timer should run; if so, move to the next phase.
             if let Some(next_timer) = self.next_timer() {
                 if next_timer.should_run() {
@@ -133,8 +147,17 @@ impl EventLoop {
     }
 
     /// [Reference](https://nodejs.org/ja/learn/asynchronous-work/event-loop-timers-and-nexttick#check)
-    fn check_phase(&mut self, _isolate: &mut v8::Isolate) {
-        // noop
+    fn check_phase(&mut self, isolate: &mut v8::Isolate) {
+        while let Some(immediate_timer) = self.immediate_timer_queue.pop_front() {
+            if self.is_timer_cleared(&immediate_timer.id) {
+                self.cleared_timers.remove(&immediate_timer.id);
+                continue;
+            }
+
+            helper::with_scope(isolate, move |_, scope| {
+                immediate_timer.execute(scope);
+            });
+        }
     }
 
     /// [Reference](https://nodejs.org/ja/learn/asynchronous-work/event-loop-timers-and-nexttick#close-callbacks)
@@ -184,5 +207,9 @@ impl EventLoop {
             }
         }
         None
+    }
+
+    fn has_immediate_timer(&self) -> bool {
+        !self.immediate_timer_queue.is_empty()
     }
 }

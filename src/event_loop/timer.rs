@@ -75,6 +75,11 @@ impl Timer {
         }
     }
 
+    pub fn new_immediate(callback: CallbackOnce) -> Self {
+        // Immediate timers are executed as soon as possible.
+        Self::new_once(callback, 0)
+    }
+
     pub(crate) fn should_run(&self) -> bool {
         self.when <= Timestamp::now()
     }
