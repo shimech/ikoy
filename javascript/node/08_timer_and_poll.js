@@ -1,8 +1,9 @@
 // Example of https://nodejs.org/ja/learn/asynchronous-work/event-loop-timers-and-nexttick#phases-in-detail
+import timers from "node:timers/promises";
 
 function someAsyncOperation(callback) {
   // Assume this takes 950ms to complete
-  ikoy.superHeavyProcess(callback, 950);
+  timers.setTimeout(950).then(callback);
 }
 
 const timeoutScheduled = Date.now();
