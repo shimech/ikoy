@@ -7,10 +7,12 @@ use std::rc::Rc;
 
 mod args;
 mod console;
+mod date;
 mod event_loop;
 mod fs;
 mod fs_promises;
 mod helper;
+mod ikoy;
 mod timer;
 
 #[tokio::main]
@@ -29,6 +31,16 @@ async fn main() {
 
     helper::with_scope(isolate, |context, scope| {
         let js_global = context.global(scope);
+
+        /*
+         * Original
+         */
+        ikoy::register(scope, js_global).unwrap();
+
+        /*
+         * Create Date
+         */
+        date::register(scope, js_global).unwrap();
 
         /*
          * Create timers
