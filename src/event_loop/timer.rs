@@ -18,14 +18,14 @@ impl TimerId {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-pub(crate) struct Timestamp(i64);
+pub(super) struct Timestamp(i64);
 
 impl Timestamp {
     fn new(timestamp: i64) -> Self {
         Self(timestamp)
     }
 
-    pub(crate) fn now() -> Self {
+    pub(super) fn now() -> Self {
         Self::new(chrono::Local::now().timestamp_millis())
     }
 
@@ -46,9 +46,9 @@ impl Ord for Timestamp {
     }
 }
 
-pub struct Timer {
+pub(super) struct Timer {
     pub id: TimerId,
-    pub(crate) when: Timestamp,
+    pub(super) when: Timestamp,
     kind: TimerKind,
 }
 
@@ -59,7 +59,7 @@ enum TimerKind {
 }
 
 impl Timer {
-    pub fn new_once(callback: CallbackOnce, delay: u64) -> Self {
+    pub(super) fn new_once(callback: CallbackOnce, delay: u64) -> Self {
         Self {
             id: TimerId::generate(),
             when: Timestamp::now().delta(delay as i64),
@@ -67,7 +67,7 @@ impl Timer {
         }
     }
 
-    pub fn new_repeating(callback: Callback, delay: u64) -> Self {
+    pub(super) fn new_repeating(callback: Callback, delay: u64) -> Self {
         Self {
             id: TimerId::generate(),
             when: Timestamp::now().delta(delay as i64),
@@ -75,12 +75,12 @@ impl Timer {
         }
     }
 
-    pub fn new_immediate(callback: CallbackOnce) -> Self {
+    pub(super) fn new_immediate(callback: CallbackOnce) -> Self {
         // Immediate timers are executed as soon as possible.
         Self::new_once(callback, 0)
     }
 
-    pub(crate) fn should_run(&self) -> bool {
+    pub(super) fn should_run(&self) -> bool {
         self.when <= Timestamp::now()
     }
 

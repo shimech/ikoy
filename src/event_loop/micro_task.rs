@@ -1,6 +1,6 @@
 use crate::event_loop::executable::{CallbackOnce, Executable};
 
-pub struct Microtask {
+pub(super) struct Microtask {
     callback: CallbackOnce,
 }
 

@@ -1,11 +1,11 @@
 use crate::event_loop::executable::{Callback, Executable, ExecuteState};
 
-pub struct Task {
+pub(super) struct Task {
     callback: Callback,
 }
 
 impl Task {
-    pub(crate) fn new(callback: Callback) -> Self {
+    pub(super) fn new(callback: Callback) -> Self {
         Self { callback }
     }
 }

@@ -1,7 +1,7 @@
 use crate::event_loop::{EventLoop, executable::ExecuteState};
 
 /// Implementation of [setImmediate](https://nodejs.org/docs/v24.12.0/api/timers.html#setimmediatecallback-args)
-pub fn v8_set_immediate<'s>(
+pub(super) fn v8_set_immediate<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
     args: v8::FunctionCallbackArguments<'s>,
     mut ret: v8::ReturnValue<'s>,

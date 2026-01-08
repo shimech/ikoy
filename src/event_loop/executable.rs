@@ -13,7 +13,8 @@ pub enum ExecuteState {
     // REJECTED,
 }
 
-pub type CallbackOnce =
+pub(crate) type CallbackOnce =
     Box<dyn for<'s> FnOnce(&mut v8::PinnedRef<'s, v8::HandleScope>) -> ExecuteState>;
 
-pub type Callback = Box<dyn for<'s> FnMut(&mut v8::PinnedRef<'s, v8::HandleScope>) -> ExecuteState>;
+pub(crate) type Callback =
+    Box<dyn for<'s> FnMut(&mut v8::PinnedRef<'s, v8::HandleScope>) -> ExecuteState>;

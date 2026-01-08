@@ -1,7 +1,7 @@
 use crate::event_loop::{EventLoop, timer::TimerId};
 
 /// Implementation of [clearImmediate](https://nodejs.org/docs/v24.12.0/api/timers.html#clearimmediateimmediate)
-pub fn v8_clear_immediate<'s>(
+pub(super) fn v8_clear_immediate<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
     args: v8::FunctionCallbackArguments<'s>,
     mut _ret: v8::ReturnValue<'s>,

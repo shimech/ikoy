@@ -35,16 +35,16 @@ unsafe impl Send for EventLoop {}
 unsafe impl Sync for EventLoop {}
 
 impl EventLoop {
-    pub fn get() -> &'static Self {
-        EVENT_LOOP.get_or_init(Self::new)
-    }
-
     #[allow(invalid_reference_casting)]
     pub fn get_mut() -> &'static mut Self {
         unsafe { &mut *(Self::get() as *const Self as *mut Self) }
     }
 
-    pub fn new() -> Self {
+    fn get() -> &'static Self {
+        EVENT_LOOP.get_or_init(Self::new)
+    }
+
+    fn new() -> Self {
         Self {
             timer_queue: BinaryHeap::new(),
             cleared_timers: HashSet::new(),

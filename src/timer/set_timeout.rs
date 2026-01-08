@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Implementation of [setTimeout](https://developer.mozilla.org/en-US/docs/Web/API/Window/setTimeout)
-pub fn v8_set_timeout<'s>(
+pub(super) fn v8_set_timeout<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
     args: v8::FunctionCallbackArguments<'s>,
     mut ret: v8::ReturnValue<'s>,

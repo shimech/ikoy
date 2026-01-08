@@ -4,7 +4,7 @@ use crate::{
 };
 
 /// Implementation of [setInterval](https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval)
-pub fn v8_set_interval<'s>(
+pub(super) fn v8_set_interval<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
     args: v8::FunctionCallbackArguments<'s>,
     mut ret: v8::ReturnValue<'s>,

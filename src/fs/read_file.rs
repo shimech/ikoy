@@ -2,7 +2,7 @@ use crate::event_loop::{EventLoop, executable::ExecuteState};
 use std::io;
 
 /// Implementation of [fs.readFile](https://nodejs.org/api/fs.html#fsreadfilepath-options-callback)
-pub fn v8_read_file<'s>(
+pub(super) fn v8_read_file<'s>(
     scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
     args: v8::FunctionCallbackArguments<'s>,
     mut ret: v8::ReturnValue<'s>,
