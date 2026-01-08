@@ -13,6 +13,7 @@ mod event_loop;
 mod fs;
 mod fs_promises;
 mod helper;
+mod http;
 mod ikoy;
 mod microtask;
 mod timer;
@@ -66,6 +67,11 @@ async fn main() {
              * @see https://nodejs.org/api/fs.html#promises-api
              */
             fs_promises::FsPromises::REGISTER,
+            /*
+             * Create http
+             * @see https://nodejs.org/docs/v24.12.0/api/http.html
+             */
+            http::Http::REGISTER,
         ];
 
         for register in registers {
