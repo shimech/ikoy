@@ -1,4 +1,7 @@
-use crate::{event_loop, timer::delay::DEFAULT_DELAY};
+use crate::{
+    event_loop::{EventLoop, executable::ExecuteState},
+    timer::delay::DEFAULT_DELAY,
+};
 
 /// Implementation of [setInterval](https://developer.mozilla.org/en-US/docs/Web/API/Window/setInterval)
 pub fn v8_set_interval<'s>(
@@ -23,7 +26,8 @@ pub fn v8_set_interval<'s>(
         .map(|param| v8::Global::new(scope, param))
         .collect();
 
-    let timer_id = event_loop::EventLoop::get_mut().enqueue_repeating_timer(
+    let event_loop = EventLoop::get_mut();
+    let timer_id = event_loop.enqueue_repeating_timer(
         Box::new(move |scope| {
             let function_ref = function_ref.open(scope);
             let params: Vec<v8::Local<v8::Value>> = params
@@ -32,7 +36,7 @@ pub fn v8_set_interval<'s>(
                 .map(|param| v8::Local::new(scope, param))
                 .collect();
             function_ref.call(scope, v8::undefined(scope).into(), &params);
-            event_loop::task_result::fulfilled()
+            ExecuteState::FULFILLED
         }),
         delay,
     );

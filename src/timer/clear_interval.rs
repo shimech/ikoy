@@ -13,5 +13,6 @@ pub fn v8_clear_interval<'s>(
         .map(TimerId::new)
         .unwrap();
 
-    EventLoop::get_mut().clear_timer(&timer_id);
+    let event_loop = EventLoop::get_mut();
+    event_loop.clear_timer(&timer_id);
 }

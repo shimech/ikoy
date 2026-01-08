@@ -1,4 +1,4 @@
-use crate::event_loop;
+use crate::event_loop::{EventLoop, executable::ExecuteState};
 use std::io;
 
 /// Implementation of [fs.readFile](https://nodejs.org/api/fs.html#fsreadfilepath-options-callback)
@@ -21,7 +21,8 @@ pub fn v8_read_file<'s>(
     });
 
     let callback = v8::Global::new(scope, callback);
-    event_loop::EventLoop::get_mut().enqueue_task(Box::new(move |scope| {
+    let event_loop = EventLoop::get_mut();
+    event_loop.enqueue_task(Box::new(move |scope| {
         rx.try_recv()
             .map(|result| {
                 let (err, data) = match result {
@@ -42,8 +43,8 @@ pub fn v8_read_file<'s>(
                 callback
                     .open(scope)
                     .call(scope, v8::undefined(scope).into(), &[err, data]);
-                event_loop::task_result::fulfilled()
+                ExecuteState::FULFILLED
             })
-            .unwrap_or(event_loop::task_result::pending())
+            .unwrap_or(ExecuteState::PENDING)
     }));
 }

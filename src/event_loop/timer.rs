@@ -1,4 +1,4 @@
-use crate::event_loop::callback::{Callback, CallbackOnce};
+use crate::event_loop::executable::{Callback, CallbackOnce, Executable};
 
 #[derive(Clone, PartialEq, Eq, Hash, Debug)]
 pub struct TimerId(String);
@@ -18,14 +18,14 @@ impl TimerId {
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
-struct Timestamp(i64);
+pub(crate) struct Timestamp(i64);
 
 impl Timestamp {
     fn new(timestamp: i64) -> Self {
         Self(timestamp)
     }
 
-    fn now() -> Self {
+    pub(crate) fn now() -> Self {
         Self::new(chrono::Local::now().timestamp_millis())
     }
 
@@ -48,7 +48,7 @@ impl Ord for Timestamp {
 
 pub struct Timer {
     pub id: TimerId,
-    when: Timestamp,
+    pub(crate) when: Timestamp,
     kind: TimerKind,
 }
 
@@ -75,29 +75,12 @@ impl Timer {
         }
     }
 
-    pub(crate) fn run<'s>(
-        mut self,
-        scope: &mut v8::PinnedRef<'s, v8::HandleScope>,
-    ) -> Option<Self> {
-        match self.kind {
-            TimerKind::Once { callback, .. } => {
-                (callback)(scope);
-                None
-            }
-            TimerKind::Repeating {
-                ref mut callback, ..
-            } => {
-                (callback)(scope);
-                Some(self.copy())
-            }
-        }
-    }
-
     pub(crate) fn should_run(&self) -> bool {
         self.when <= Timestamp::now()
     }
 
-    fn copy(self) -> Self {
+    /// When postpone is called, ownership is transferred to the newly created Timer.
+    fn postpone(self) -> Self {
         match self.kind {
             TimerKind::Repeating { callback, delay } => Timer {
                 id: self.id.clone(),
@@ -105,6 +88,25 @@ impl Timer {
                 kind: TimerKind::Repeating { callback, delay },
             },
             _ => panic!("copy is allowed only for TimerKind::Repeating"),
+        }
+    }
+}
+
+impl Executable for Timer {
+    type NextExecutable = Self;
+
+    fn execute<'s>(mut self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) -> Option<Self> {
+        match self.kind {
+            TimerKind::Once { callback } => {
+                callback(scope);
+                None
+            }
+            TimerKind::Repeating {
+                ref mut callback, ..
+            } => {
+                callback(scope);
+                Some(self.postpone())
+            }
         }
     }
 }

@@ -80,7 +80,7 @@
   fs.readFile(notExistedFilePath, (err, _) => {
     console.error(err);
   });
-  console.log(`reading ${filePath}...`);
+  console.log(`reading ${notExistedFilePath}...`);
 }
 
 {

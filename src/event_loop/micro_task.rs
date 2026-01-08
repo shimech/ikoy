@@ -1,11 +1,15 @@
-use crate::event_loop::{callback::CallbackOnce, task_result::TaskResult};
+use crate::event_loop::executable::{CallbackOnce, Executable};
 
 pub struct Microtask {
     callback: CallbackOnce,
 }
 
-impl Microtask {
-    pub fn run<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) -> TaskResult {
-        (self.callback)(scope)
+impl Executable for Microtask {
+    type NextExecutable = Self;
+
+    fn execute<'s>(self, scope: &mut v8::PinnedRef<'s, v8::HandleScope>) -> Option<Self> {
+        (self.callback)(scope);
+        // Microtasks are executed once and do not need to be rescheduled.
+        None
     }
 }

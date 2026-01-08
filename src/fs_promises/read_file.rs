@@ -1,4 +1,4 @@
-use crate::event_loop;
+use crate::event_loop::{EventLoop, executable::ExecuteState};
 use std::io;
 
 /// Implementation of [fsPromises.readFile](https://nodejs.org/api/fs.html#fspromisesreadfilepath-options)
@@ -22,7 +22,8 @@ pub fn v8_read_file<'s>(
     });
 
     let resolver = v8::Global::new(scope, resolver);
-    event_loop::EventLoop::get_mut().enqueue_task(Box::new(move |scope| {
+    let event_loop = EventLoop::get_mut();
+    event_loop.enqueue_task(Box::new(move |scope| {
         let resolver = resolver.open(scope);
 
         rx.try_recv()
@@ -39,8 +40,8 @@ pub fn v8_read_file<'s>(
                         resolver.reject(scope, err.into());
                     }
                 };
-                event_loop::task_result::fulfilled()
+                ExecuteState::FULFILLED
             })
-            .unwrap_or(event_loop::task_result::pending())
+            .unwrap_or(ExecuteState::PENDING)
     }));
 }

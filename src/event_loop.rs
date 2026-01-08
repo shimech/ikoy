@@ -1,6 +1,6 @@
 use crate::{
     event_loop::{
-        callback::{Callback, CallbackOnce},
+        executable::{Callback, CallbackOnce, Executable},
         micro_task::Microtask,
         task::Task,
         timer::{Timer, TimerId},
@@ -13,14 +13,15 @@ use std::{
     sync::OnceLock,
 };
 
-mod callback;
+pub mod executable;
 pub mod micro_task;
 pub mod task;
-pub mod task_result;
 pub mod timer;
 
 static EVENT_LOOP: OnceLock<EventLoop> = OnceLock::new();
 
+/// An event loop implementation similar to Node.js.
+/// See also: <https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick>
 pub struct EventLoop {
     timer_queue: BinaryHeap<Reverse<Timer>>,
     cleared_timers: HashSet<TimerId>,
@@ -53,7 +54,8 @@ impl EventLoop {
 
     pub fn run(&mut self, isolate: &mut v8::Isolate) {
         while self.is_running() {
-            // Timer phase
+            // timers phase
+            // @see https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick#timers
             while let Some(Reverse(timer)) = self.timer_queue.peek() {
                 if timer.should_run() {
                     let Reverse(timer) = self.timer_queue.pop().unwrap();
@@ -63,30 +65,30 @@ impl EventLoop {
                         continue;
                     }
 
-                    helper::with_scope(isolate, |_, scope| {
-                        if let Some(new_timer) = timer.run(scope) {
-                            self.timer_queue.push(Reverse(new_timer));
-                        }
-                    });
+                    if let Some(new_timer) =
+                        self.execute_with_microtask(isolate, move |scope| timer.execute(scope))
+                    {
+                        self.timer_queue.push(Reverse(new_timer));
+                    }
                 } else {
                     break;
                 }
             }
 
-            // Microtask phase
-            self.run_microtask(isolate);
+            // poll phase
+            while let Some(task) = self.task_queue.pop_front() {
+                if let Some(new_task) =
+                    self.execute_with_microtask(isolate, move |scope| task.execute(scope))
+                {
+                    self.task_queue.push_back(new_task);
+                }
 
-            // Task phase
-            if let Some(mut task) = self.task_queue.pop_front() {
-                helper::with_scope(isolate, |_, scope| {
-                    task.run(scope).unwrap_or_else(|| {
-                        self.task_queue.push_back(task);
-                    });
-                });
-
-                // Microtask phase
-                self.run_microtask(isolate);
-                continue;
+                // Check if the next scheduled timer should run; if so, move to the next phase.
+                if let Some(next_timer) = self.next_timer() {
+                    if next_timer.should_run() {
+                        break;
+                    }
+                }
             }
         }
     }
@@ -115,25 +117,45 @@ impl EventLoop {
         self.cleared_timers.insert(id.clone());
     }
 
+    fn execute_with_microtask<F, NE: Executable>(
+        &mut self,
+        isolate: &mut v8::Isolate,
+        f: F,
+    ) -> Option<NE>
+    where
+        F: for<'s> FnOnce(&mut v8::PinnedRef<'s, v8::HandleScope>) -> Option<NE>,
+    {
+        let ret = helper::with_scope(isolate, |_, scope| f(scope));
+
+        // Run V8's internal microtask queue.
+        isolate.perform_microtask_checkpoint();
+
+        // Run ikoy's microtask queue.
+        while let Some(micro_task) = self.microtask_queue.pop_front() {
+            helper::with_scope(isolate, move |_, scope| {
+                micro_task.execute(scope);
+            });
+        }
+
+        ret
+    }
+
     fn is_running(&self) -> bool {
         !self.timer_queue.is_empty()
             || !self.task_queue.is_empty()
             || !self.microtask_queue.is_empty()
     }
 
-    fn run_microtask(&mut self, isolate: &mut v8::Isolate) {
-        // Run V8's internal microtask queue.
-        isolate.perform_microtask_checkpoint();
-
-        // Run ikoy's microtask queue.
-        while let Some(micro_task) = self.microtask_queue.pop_front() {
-            helper::with_scope(isolate, |_, scope| {
-                micro_task.run(scope);
-            });
-        }
-    }
-
     fn is_timer_cleared(&self, id: &TimerId) -> bool {
         self.cleared_timers.contains(id)
+    }
+
+    fn next_timer(&self) -> Option<&Timer> {
+        for Reverse(timer) in (&self.timer_queue).into_iter() {
+            if !self.is_timer_cleared(&timer.id) {
+                return Some(&timer);
+            }
+        }
+        None
     }
 }

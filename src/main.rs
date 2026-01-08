@@ -1,4 +1,6 @@
 use crate::args::Args;
+use crate::event_loop::EventLoop;
+use crate::event_loop::executable::ExecuteState;
 use clap::Parser;
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -23,7 +25,7 @@ async fn main() {
     let isolate = &mut v8::Isolate::new(Default::default());
 
     let result = Rc::new(RefCell::new(None::<String>));
-    let result_clone = result.clone();
+    let result_clone = Rc::clone(&result);
 
     helper::with_scope(isolate, |context, scope| {
         let js_global = context.global(scope);
@@ -56,18 +58,20 @@ async fn main() {
         let script = v8::Script::compile(scope, code, None).unwrap();
         let script = v8::Global::new(scope, script);
 
-        event_loop::EventLoop::get_mut().enqueue_task(Box::new(move |scope| {
+        let event_loop = EventLoop::get_mut();
+        event_loop.enqueue_task(Box::new(move |scope| {
             let script = script.open(scope);
             let ret = script
                 .run(scope)
                 .and_then(|v| v.to_string(scope))
                 .map(|v| v.to_rust_string_lossy(scope));
             *result_clone.borrow_mut() = ret;
-            event_loop::task_result::fulfilled()
+            ExecuteState::FULFILLED
         }));
     });
 
-    event_loop::EventLoop::get_mut().run(isolate);
+    let event_loop = EventLoop::get_mut();
+    event_loop.run(isolate);
 
     if args.print.is_some() {
         if let Some(ref result) = *result.borrow() {
