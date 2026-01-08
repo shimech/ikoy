@@ -52,44 +52,14 @@ impl EventLoop {
         }
     }
 
+    /// [Reference](https://nodejs.org/ja/learn/asynchronous-work/event-loop-timers-and-nexttick)
     pub fn run(&mut self, isolate: &mut v8::Isolate) {
         while self.is_running() {
-            // timers phase
-            // @see https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick#timers
-            while let Some(Reverse(timer)) = self.timer_queue.peek() {
-                if timer.should_run() {
-                    let Reverse(timer) = self.timer_queue.pop().unwrap();
-
-                    if self.is_timer_cleared(&timer.id) {
-                        self.cleared_timers.remove(&timer.id);
-                        continue;
-                    }
-
-                    if let Some(new_timer) =
-                        self.execute_with_microtask(isolate, move |scope| timer.execute(scope))
-                    {
-                        self.timer_queue.push(Reverse(new_timer));
-                    }
-                } else {
-                    break;
-                }
-            }
-
-            // poll phase
-            while let Some(task) = self.task_queue.pop_front() {
-                if let Some(new_task) =
-                    self.execute_with_microtask(isolate, move |scope| task.execute(scope))
-                {
-                    self.task_queue.push_back(new_task);
-                }
-
-                // Check if the next scheduled timer should run; if so, move to the next phase.
-                if let Some(next_timer) = self.next_timer() {
-                    if next_timer.should_run() {
-                        break;
-                    }
-                }
-            }
+            self.timers_phase(isolate);
+            self.pending_callbacks_phase(isolate);
+            self.poll_phase(isolate);
+            self.check_phase(isolate);
+            self.close_callbacks_phase(isolate);
         }
     }
 
@@ -117,16 +87,75 @@ impl EventLoop {
         self.cleared_timers.insert(id.clone());
     }
 
-    fn execute_with_microtask<F, NE: Executable>(
-        &mut self,
-        isolate: &mut v8::Isolate,
-        f: F,
-    ) -> Option<NE>
+    /// [Reference](https://nodejs.org/en/learn/asynchronous-work/event-loop-timers-and-nexttick#timers)
+    fn timers_phase(&mut self, isolate: &mut v8::Isolate) {
+        while let Some(Reverse(timer)) = self.timer_queue.peek() {
+            if timer.should_run() {
+                let Reverse(timer) = self.timer_queue.pop().unwrap();
+
+                if self.is_timer_cleared(&timer.id) {
+                    self.cleared_timers.remove(&timer.id);
+                    continue;
+                }
+
+                if let Some(new_timer) =
+                    self.execute_then_microtask(isolate, move |scope| timer.execute(scope))
+                {
+                    self.timer_queue.push(Reverse(new_timer));
+                }
+            } else {
+                break;
+            }
+        }
+    }
+
+    /// [Reference](https://nodejs.org/ja/learn/asynchronous-work/event-loop-timers-and-nexttick#pending-callbacks)
+    fn pending_callbacks_phase(&mut self, _isolate: &mut v8::Isolate) {
+        // noop
+    }
+
+    /// [Reference](https://nodejs.org/ja/learn/asynchronous-work/event-loop-timers-and-nexttick#poll)
+    fn poll_phase(&mut self, isolate: &mut v8::Isolate) {
+        while let Some(task) = self.task_queue.pop_front() {
+            if let Some(new_task) =
+                self.execute_then_microtask(isolate, move |scope| task.execute(scope))
+            {
+                self.task_queue.push_back(new_task);
+            }
+
+            // Check if the next scheduled timer should run; if so, move to the next phase.
+            if let Some(next_timer) = self.next_timer() {
+                if next_timer.should_run() {
+                    break;
+                }
+            }
+        }
+    }
+
+    /// [Reference](https://nodejs.org/ja/learn/asynchronous-work/event-loop-timers-and-nexttick#check)
+    fn check_phase(&mut self, _isolate: &mut v8::Isolate) {
+        // noop
+    }
+
+    /// [Reference](https://nodejs.org/ja/learn/asynchronous-work/event-loop-timers-and-nexttick#close-callbacks)
+    fn close_callbacks_phase(&mut self, _isolate: &mut v8::Isolate) {
+        // noop
+    }
+
+    fn execute_then_microtask<F, NE>(&mut self, isolate: &mut v8::Isolate, f: F) -> Option<NE>
     where
         F: for<'s> FnOnce(&mut v8::PinnedRef<'s, v8::HandleScope>) -> Option<NE>,
+        NE: Executable,
     {
         let ret = helper::with_scope(isolate, |_, scope| f(scope));
 
+        // Microtasks are always executed after other tasks.
+        self.execute_microtask(isolate);
+
+        ret
+    }
+
+    fn execute_microtask(&mut self, isolate: &mut v8::Isolate) {
         // Run V8's internal microtask queue.
         isolate.perform_microtask_checkpoint();
 
@@ -136,8 +165,6 @@ impl EventLoop {
                 micro_task.execute(scope);
             });
         }
-
-        ret
     }
 
     fn is_running(&self) -> bool {
