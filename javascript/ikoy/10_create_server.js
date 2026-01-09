@@ -2,7 +2,7 @@ let id = 1;
 
 function sleep(id) {
   if (id % 2 === 0) {
-    return 3000;
+    return 4000;
   } else {
     return 500;
   }
