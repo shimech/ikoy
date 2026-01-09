@@ -6,7 +6,7 @@ while (true) {
     .then((res) => res.text())
     .then((body) => {
       const responsedAt = Date.now();
-      console.log(`ID: ${body}, Reponse time: ${responsedAt - requestedAt}ms`);
+      console.log(`ID: ${body}, Response time: ${responsedAt - requestedAt}ms`);
     })
     .catch((err) => console.error(err));
   await setTimeout(1000);
